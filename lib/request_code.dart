@@ -30,7 +30,7 @@ class RequestCode {
     await controller.setNavigationDelegate(_navigationDelegate);
     await controller.setJavaScriptMode(JavaScriptMode.unrestricted);
 
-    await controller.setBackgroundColor(Colors.transparent);
+    await controller.setBackgroundColor(Colors.white);
     await controller.setUserAgent(_config.userAgent);
     await controller.loadRequest(launchUri);
 
@@ -39,11 +39,27 @@ class RequestCode {
     await _config.navigatorKey.currentState!.push(
       MaterialPageRoute(
         builder: (context) => Scaffold(
-            body: SafeArea(
-          child: Stack(
-            children: [_config.loader, webView],
-          ),
-        )),
+            appBar: AppBar(
+                leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () async {
+                if (await controller.canGoBack()) {
+                  controller.goBack();
+                } else {
+                  _config.navigatorKey.currentState!.pop();
+                }
+              },
+            )),
+            body: Container(
+              color: Colors.white,
+              child: SafeArea(
+                  child: Stack(
+                children: [
+                  _config.loader,
+                  webView,
+                ],
+              )),
+            )),
       ),
     );
     return _code;
@@ -72,17 +88,12 @@ class RequestCode {
     await WebViewCookieManager().clearCookies();
   }
 
-  String _constructUrlParams() => _mapToQueryParams(
-      _authorizationRequest.parameters, _config.customParameters);
+  String _constructUrlParams() =>
+      _mapToQueryParams(_authorizationRequest.parameters);
 
-  String _mapToQueryParams(
-      Map<String, String> params, Map<String, String> customParams) {
+  String _mapToQueryParams(Map<String, String> params) {
     final queryParams = <String>[];
-
     params.forEach((String key, String value) =>
-        queryParams.add('$key=${Uri.encodeQueryComponent(value)}'));
-
-    customParams.forEach((String key, String value) =>
         queryParams.add('$key=${Uri.encodeQueryComponent(value)}'));
     return queryParams.join('&');
   }
